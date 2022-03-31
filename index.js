@@ -31,7 +31,10 @@ client.on('messageCreate', (message) => {
                         console.log(err);
                     });
                 break;
-            default: message.reply('che connais pas chat!'); break;
+            default:
+                message.reply('che ne connais pas cha! 😾');
+                //message.reply({files: ["img/error.png"]});
+                break;
         }
 
     }
