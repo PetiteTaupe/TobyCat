@@ -4,23 +4,36 @@ const client = new Client({
     partials: ['MESSAGE', 'CHANNEL', 'REACTION']
 })
 const config = require('./config.json')
+const axios = require('axios')
 
 const _ = require('lodash')
+/*
 const randomResponse = [ "https://imgur.com/d6BSgMS" , "https://imgur.com/GZ8hObx" , "https://imgur.com/lo0HqdX",
                          "https://imgur.com/lo0HqdX" , "https://imgur.com/gh8i9QC" , "https://imgur.com/nVIGIJO",
                          "https://imgur.com/VgdARTk" , "https://imgur.com/DaY8PcB" , "https://imgur.com/Ao9Lu4t",
                          "https://imgur.com/aNDUcF2" , "https://imgur.com/JXzgI7y" , "https://imgur.com/BZzwABw"]
+ */
 
 client.on('messageCreate', (message) => {
     if (message.content.startsWith('!')) {
         let command = message.content.split(' ')[0].replace('!', '')
+
         console.log(command)
-        if (command === 'miaou') {
-            message.reply('miaou')
+
+        switch (command){
+            case 'miaou': message.reply('miaou'); break;
+            case 'cat':
+                axios.get('https://aws.random.cat/meow')
+                    .then(res => {
+                        message.reply(res.data.file)
+                    })
+                    .catch(err => {
+                        console.log(err);
+                    });
+                break;
+            default: message.reply('che connais pas chat!'); break;
         }
-        if (command === 'cat') {
-            message.reply(_.sample(randomResponse))
-        }
+
     }
 })
 
