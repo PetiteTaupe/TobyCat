@@ -28,11 +28,28 @@ client.on('messageCreate', (message) => {
                         message.reply(res.data.file)
                     })
                     .catch(err => {
-                        console.log(err);
-                    });
+                        console.log(err)
+                    })
+                break;
+            case 'ub':
+                axios.get('http://ddragon.leagueoflegends.com/cdn/12.6.1/data/en_US/champion.json')
+                    .then(res => {
+                        let championList = res.data.data;
+                        const newList = [];
+
+                        for (let i in championList) {
+                            newList.push(championList[i])
+                        }
+
+                        message.reply(newList[Math.floor(Math.random() * newList.length)].name)
+
+                    })
+                    .catch(err => {
+                        console.log(err)
+                    })
                 break;
             default:
-                message.reply('che ne connais pas cha! 😾');
+                message.reply('che ne connais pas cha! 😾')
                 //message.reply({files: ["img/error.png"]});
                 break;
         }
