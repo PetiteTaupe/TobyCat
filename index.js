@@ -1,4 +1,5 @@
 const {Client} = require('discord.js')
+const { MessageEmbed } = require('discord.js');
 const client = new Client({
     intents: ['DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILDS'],
     partials: ['MESSAGE', 'CHANNEL', 'REACTION']
@@ -7,12 +8,7 @@ const config = require('./config.json')
 const axios = require('axios')
 
 const _ = require('lodash')
-/*
-const randomResponse = [ "https://imgur.com/d6BSgMS" , "https://imgur.com/GZ8hObx" , "https://imgur.com/lo0HqdX",
-                         "https://imgur.com/lo0HqdX" , "https://imgur.com/gh8i9QC" , "https://imgur.com/nVIGIJO",
-                         "https://imgur.com/VgdARTk" , "https://imgur.com/DaY8PcB" , "https://imgur.com/Ao9Lu4t",
-                         "https://imgur.com/aNDUcF2" , "https://imgur.com/JXzgI7y" , "https://imgur.com/BZzwABw"]
- */
+const randomPost = [ "Jungle" , "ADC" , "Support" , "Top" , "Mid"]
 
 client.on('messageCreate', (message) => {
     if (message.content.startsWith('!')) {
@@ -41,7 +37,23 @@ client.on('messageCreate', (message) => {
                             newList.push(championList[i])
                         }
 
-                        message.reply(newList[Math.floor(Math.random() * newList.length)].name)
+                        let randomId = Math.floor(Math.random() * newList.length)
+                        newList[randomId].name
+                        let randomChamp = newList[randomId].name
+
+                        const ultimate_bravery = new MessageEmbed()
+                            .setColor('#7289D9')
+                            .setTitle('Ultimate Bravery')
+                            .setAuthor({ name: 'TobyCat', iconURL: 'https://i.imgur.com/SHdyR65.png'})
+                            .setDescription('Voici ta prochaine game de la League des Croquettes, GOOD LUCK & HAVE FUN!')
+                            .setFooter({ text: 'Powered by Toby The Fucking Cat'})
+                            .setImage('http://ddragon.leagueoflegends.com/cdn/12.6.1/img/champion/' + randomChamp + '.png')
+                            .addFields(
+                                { name: 'Ton Champion', value: randomChamp },
+                                { name: 'Ton rôle', value: _.sample(randomPost) },
+                            );
+
+                        message.reply({embeds: [ultimate_bravery]})
 
                     })
                     .catch(err => {
