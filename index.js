@@ -41,95 +41,112 @@ client.on('messageCreate', async (message) => {
                 break;
             case 'ub':
                 let randomPost = ["Jungle", "Bot", "Support", "Top", "Mid"]
+                let championsAsArray = Object.values(champions)
 
-                message.react('👍');
+                let channel = message.channel;
+                message.channel.send("Réagissez à ce message pour participer à ce UB !").then(async message => {
+                    message.react('👍');
 
-                const filter = (reaction, user) => {
-                    return ['👍'].includes(reaction.emoji.name) && user.id === message.member.user.id;
-                };
+                    const filter = (reaction, user) => {
+                        return ['👍'].includes(reaction.emoji.name) && user.id !== client.user.id;
+                    };
 
-                message.awaitReactions({ filter, max: 6, time: 30000, errors: ['time'] })
-                    .then(collected => {
+                    const collector = message.createReactionCollector({filter: filter, time: 30 * 1000, max: 5})
+                    collector.on("collect", async (r, user) => {
+                        let randomChamp = _.sample(championsAsArray)
+                        championsAsArray.splice(championsAsArray.indexOf(randomChamp), 1)
+
+                        let runesAsArray = Object.values(runes)
+
+                        let randomMajorFamilyRune = _.sample(runesAsArray)
+                        let randomMajorFamilyRuneName = randomMajorFamilyRune.name
+                        let randomMajorRune = _.sample(randomMajorFamilyRune.runes)
+                        let randomMajorRuneName = randomMajorRune.name
+
+                        let randomSecondaryFamilyRune
+                        let randomSecondaryFamilyRuneName
+
+                        do {
+                            randomSecondaryFamilyRune = _.sample(runesAsArray)
+                            randomSecondaryFamilyRuneName = randomSecondaryFamilyRune.name
+                        } while (randomMajorFamilyRuneName === randomSecondaryFamilyRuneName)
+
+                        let post = _.sample(randomPost)
+                        randomPost.splice(randomPost.indexOf(post), 1)
+
+                        // Création du canvas
+                        const canvas = Canvas.createCanvas(960, 540);
+                        const context = canvas.getContext('2d');
+
+                        // Champion Image
+                        const background = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + randomChamp.id + '_0.jpg');
+                        context.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+                        // Champion Banner
+                        const imgBanner = await Canvas.loadImage('img/banner.png');
+                        context.drawImage(imgBanner, 10, 0, 200, 500);
+
+                        // Post
+                        const imgPost = await Canvas.loadImage('img/Position_Diamond-' + post + '.png');
+                        context.drawImage(imgPost, 60, 50, 100, 100);
+
+                        // Major Rune
+                        const imgMajorRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomMajorRune.icon);
+                        context.drawImage(imgMajorRune, 25, 175, 100, 100);
+
+                        // Secondary Rune
+                        const imgSecondaryRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomSecondaryFamilyRune.icon);
+                        context.drawImage(imgSecondaryRune, 125, 200, 50, 50);
+
+                        // Use the helpful Attachment class structure to process the file for you
+                        const attachment = new MessageAttachment(canvas.toBuffer(), 'ub.png');
+
+                        const ultimate_bravery = new MessageEmbed()
+                            .setColor('#7289D9')
+                            //.setTitle('Ultimate Bravery')
+                            .setAuthor({name: user.username, iconURL: user.avatarURL()})
+                            .setDescription('Voici ton ultimate bravery, GOOD LUCK & HAVE FUN!😼🎲😹')
+                            .addFields([
+                                {name: 'Ton Champion', value: randomChamp.name, inline: true},
+                                {name: 'Ton rôle', value: post, inline: true},
+                                {
+                                    name: 'Tes runes',
+                                    value: randomMajorRuneName + " | " + randomSecondaryFamilyRuneName,
+                                    inline: true
+                                },
+                            ])
+                            .setFooter({text: 'Powered by Toby The Fucking Cat'});
+
+                        message.channel.send({content: user.toString(), embeds: [ultimate_bravery], files: [attachment]}).then(m => {
+                            m.react('🎲')
+
+                            const filter = (reaction, reactUser) => {
+                                return ['🎲'].includes(reaction.emoji.name) && reactUser.id === user.id && reactUser !== client.user.id;
+                            };
+
+                            const collector = m.createReactionCollector({filter: filter, time: 20 * 1000, max: 1})
+                            collector.on("collect", async (r, user) => {
+                                m.channel.send('TU JOUES CA ET VA NIQUER TA MERE')
+                            })
+                        })
+                    })
+                    collector.on("end", () => {
+                        message.delete()
+                    })
+                })
+
+                /*message.awaitReactions({ filter, max: 6, time: 30000, errors: ['time'] })
+                    .then(async collected => {
+                        console.log(collected)
                         const reaction = collected.first;
 
                         if (reaction.emoji.name === '👍') {
 
-                            let championsAsArray = Object.values(champions)
-                            let randomChamp = _.sample(championsAsArray)
-                            let randomChampName = randomChamp.name
-                            let randomChampId = randomChamp.id
 
-                            let runesAsArray = Object.values(runes)
-
-                            let randomMajorFamilyRune = _.sample(runesAsArray)
-                            let randomMajorFamilyRuneName = randomMajorFamilyRune.name
-                            let randomMajorRune = _.sample(randomMajorFamilyRune.runes)
-                            let randomMajorRuneName = randomMajorRune.name
-
-                            let randomSecondaryFamilyRune
-                            let randomSecondaryFamilyRuneName
-
-                            do {
-                                randomSecondaryFamilyRune = _.sample(runesAsArray)
-                                randomSecondaryFamilyRuneName = randomSecondaryFamilyRune.name
-                            } while (randomMajorFamilyRuneName === randomSecondaryFamilyRuneName)
-
-                            let post = _.sample(randomPost)
-
-                            const canvas = Canvas.createCanvas(960, 540);
-                            const context = canvas.getContext('2d');
-
-                            const background = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + randomChampId + '_0.jpg');
-
-                            // This uses the canvas dimensions to stretch the image onto the entire canvas
-                            context.drawImage(background, 0, 0, canvas.width, canvas.height);
-
-                            const imgBanner = await Canvas.loadImage('img/banner.png');
-
-                            // Draw a shape onto the main canvas
-                            context.drawImage(imgBanner, 10, 0, 200, 500);
-
-                            const imgPost = await Canvas.loadImage('img/Position_Diamond-' + post + '.png');
-
-                            // Draw a shape onto the main canvas
-                            context.drawImage(imgPost, 60, 50, 100, 100);
-
-                            const imgMajorRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomMajorRune.icon);
-
-                            // Draw a shape onto the main canvas
-                            context.drawImage(imgMajorRune, 25, 175, 100, 100);
-
-                            const imgSecondaryRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomSecondaryFamilyRune.icon);
-
-                            // Draw a shape onto the main canvas
-                            context.drawImage(imgSecondaryRune, 125, 200, 50, 50);
-
-                            // Use the helpful Attachment class structure to process the file for you
-                            const attachment = new MessageAttachment(canvas.toBuffer(), 'ub.png');*/
-
-                            const ultimate_bravery = new MessageEmbed()
-                                .setColor('#7289D9')
-                                //.setTitle('Ultimate Bravery')
-                                .setAuthor({name: message.member.nickname, iconURL: message.author.avatarURL()})
-                                .setDescription('Voici ton ultimate bravery, GOOD LUCK & HAVE FUN!😼🎲😹')
-                                .addFields([
-                                    {name: 'Ton Champion', value: randomChampName, inline: true},
-                                    {name: 'Ton rôle', value: post, inline: true},
-                                    {
-                                        name: 'Tes runes',
-                                        value: randomMajorRuneName + " | " + randomSecondaryFamilyRuneName,
-                                        inline: true
-                                    },
-                                ])
-                                .setFooter({text: 'Powered by Toby The Fucking Cat'});
-
-
-                            message.reply({embeds: [ultimate_bravery], files: [attachment]})
                         }
                     }).catch(collected => {
                         message.reply('Merci pour che vent...😿');
-                    });
-                console.log("fin")
+                    });*/
                 break;
             default:
                 message.reply('che ne connais pas cha! 😾')
