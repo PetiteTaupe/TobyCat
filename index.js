@@ -33,9 +33,10 @@ client.on('messageCreate', async (message) => {
                 message.reply('miaou');
                 break;
             case 'cat':
-                axios.get('https://aws.random.cat/meow')
+                axios.get('https://api.thecatapi.com/v1/images/search')
                     .then(res => {
-                        message.reply(res.data.file)
+                        //message.reply(res.data.file)
+                        message.reply(res.data[0].url)
                     })
                     .catch(err => {
                         console.log(err)
