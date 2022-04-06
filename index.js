@@ -27,6 +27,7 @@ client.on('messageCreate', async (message) => {
         let command = message.content.split(' ')[0].replace(config.prefix, '')
         console.log(command)
 
+        let defaultFallback = false;
         switch (command) {
             case 'miaou':
                 message.reply('miaou');
@@ -43,10 +44,9 @@ client.on('messageCreate', async (message) => {
                 break;
             case 'ub':
                 let randomPost = ["Jungle", "Bot", "Support", "Top", "Mid"]
-                let championsAsArray = Object.values(champions)
+                let localChampions = champions
+                let localRunes = runes
 
-
-                let channel = message.channel;
                 message.channel.send("Réagissez à ce message pour participer à ce UB !").then(async message => {
                     message.react('👍');
 
@@ -56,101 +56,150 @@ client.on('messageCreate', async (message) => {
 
                     const collector = message.createReactionCollector({filter: filter, time: 30 * 1000, max: 5})
                     collector.on("collect", async (r, user) => {
-                        let randomChamp = _.sample(championsAsArray)
-                        championsAsArray.splice(championsAsArray.indexOf(randomChamp), 1)
+                        // Funcs
+                        function getRandomChamp() {
+                            let randomChamp = _.sample(localChampions)
+                            localChampions.splice(localChampions.indexOf(randomChamp), 1)
 
+                            return randomChamp
+                        }
 
+                        function getRandomRunes() {
+                            let randomMajorFamilyRune = _.sample(localRunes)
 
-                        let randomMajorFamilyRune = _.sample(runes)
-                        let randomMajorFamilyRuneName = randomMajorFamilyRune.name
-                        let randomMajorRune = _.sample(randomMajorFamilyRune.runes)
-                        let randomMajorRuneName = randomMajorRune.name
+                            let randomMajorRune = _.sample(randomMajorFamilyRune.runes)
+                            let randomSecondaryFamilyRune = null
 
-                        let randomSecondaryFamilyRune
-                        let randomSecondaryFamilyRuneName
+                            do {
+                                randomSecondaryFamilyRune = _.sample(runes)
+                            } while (randomMajorFamilyRune.name === randomSecondaryFamilyRune.name)
 
-                        do {
-                            randomSecondaryFamilyRune = _.sample(runes)
-                            randomSecondaryFamilyRuneName = randomSecondaryFamilyRune.name
-                        } while (randomMajorFamilyRuneName === randomSecondaryFamilyRuneName)
+                            return {
+                                major: randomMajorRune,
+                                secondary: randomSecondaryFamilyRune
+                            }
+                        }
 
-                        let post = _.sample(randomPost)
+                        function getRandomSummonerSpell() {
+                            return _.sample(summoners)
+                        }
+
+                        function getRandomBoots() {
+                            return _.sample(boots)
+                        }
+
+                        // Vars
+                        let randomChamp = getRandomChamp()
+
+                        const post = _.sample(randomPost)
                         randomPost.splice(randomPost.indexOf(post), 1)
 
-                        let randomSummonerSpell = _.sample(summoners)
+                        let randomSummonerSpell = getRandomSummonerSpell()
 
-                        let randomBoots = _.sample(boots)
+                        let randomBoots = getRandomBoots()
 
-                        // Création du canvas
-                        const canvas = Canvas.createCanvas(960, 540);
-                        const context = canvas.getContext('2d');
+                        let randomRunes = getRandomRunes()
 
-                        // Champion Image
-                        const background = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + randomChamp.id + '_0.jpg');
-                        context.drawImage(background, 0, 0, canvas.width, canvas.height);
+                        async function generateCanvasAttachment() {
+                            // Création du canvas
+                            const canvas = Canvas.createCanvas(960, 540);
+                            const context = canvas.getContext('2d');
 
-                        // Champion Banner
-                        const imgBanner = await Canvas.loadImage('img/banner.png');
-                        context.drawImage(imgBanner, 10, 0, 200, 500);
+                            // Champion Image
+                            const background = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + randomChamp.id + '_0.jpg');
+                            context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-                        // Post
-                        const imgPost = await Canvas.loadImage('img/Position_Diamond-' + post + '.png');
-                        context.drawImage(imgPost, 60, 25, 100, 100);
+                            // Champion Banner
+                            const imgBanner = await Canvas.loadImage('img/banner.png');
+                            context.drawImage(imgBanner, 10, 0, 200, 500);
 
-                        // Major Rune
-                        const imgMajorRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomMajorRune.icon);
-                        context.drawImage(imgMajorRune, 25, 125, 100, 100);
+                            // Post
+                            const imgPost = await Canvas.loadImage('img/Position_Diamond-' + post + '.png');
+                            context.drawImage(imgPost, 60, 25, 100, 100);
 
-                        // Secondary Rune
-                        const imgSecondaryRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomSecondaryFamilyRune.icon);
-                        context.drawImage(imgSecondaryRune, 125, 150, 50, 50);
+                            // Major Rune
+                            const imgMajorRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomRunes.major.icon);
+                            context.drawImage(imgMajorRune, 25, 125, 100, 100);
 
-                        // Summoner
-                        const imgSummoner = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/img/spell/' + randomSummonerSpell.id + '.png');
-                        context.drawImage(imgSummoner, 45, 225, 60, 60);
+                            // Secondary Rune
+                            const imgSecondaryRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomRunes.secondary.icon);
+                            context.drawImage(imgSecondaryRune, 125, 150, 50, 50);
 
-                        // Bottes
-                        const imgBoots = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/img/item/' + randomBoots.image.full);
-                        context.drawImage(imgBoots, 120, 225, 60, 60);
+                            // Summoner
+                            const imgSummoner = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/img/spell/' + randomSummonerSpell.id + '.png');
+                            context.drawImage(imgSummoner, 45, 225, 60, 60);
 
-                        context.fillStyle = 'white'
-                        context.strokeStyle = '#7289D9'
-                        context.font = '90px "Friz Quadrata"'
+                            // Bottes
+                            const imgBoots = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/img/item/' + randomBoots.image.full);
+                            context.drawImage(imgBoots, 120, 225, 60, 60);
 
-                        context.fillText(randomChamp.name, canvas.width / 4, 450);
-                        context.strokeText(randomChamp.name, canvas.width / 4, 450);
+                            context.fillStyle = 'white'
+                            context.strokeStyle = '#7289D9'
+                            context.font = '90px "Friz Quadrata"'
 
-                        // Use the helpful Attachment class structure to process the file for you
-                        const attachment = new MessageAttachment(canvas.toBuffer(), 'ub.png');
+                            context.fillText(randomChamp.name, canvas.width / 4, 450);
+                            context.strokeText(randomChamp.name, canvas.width / 4, 450);
 
-                        const ultimate_bravery = new MessageEmbed()
-                            .setColor('#7289D9')
-                            //.setTitle('Ultimate Bravery')
-                            .setAuthor({name: user.username, iconURL: user.avatarURL()})
-                            .setDescription('Voici ton ultimate bravery, GOOD LUCK & HAVE FUN!😼🎲😹')
-                            .addFields([
-                                {name: 'Ton champion', value: randomChamp.name, inline: true},
-                                {name: 'Ton rôle', value: post, inline: true},
-                                {
-                                    name: 'Tes runes',
-                                    value: randomMajorRuneName + " | " + randomSecondaryFamilyRuneName,
-                                    inline: true
-                                },
-                                {name: 'Ton summoner', value: randomSummonerSpell.name, inline: true},
-                                {name: 'Tes bottes', value: randomBoots.name, inline: true},
-                            ])
-                            .setFooter({text: 'Powered by Toby The Fucking Cat'});
+                            // Use the helpful Attachment class structure to process the file for you
+                            return new MessageAttachment(canvas.toBuffer(), 'ub.png');
+                        }
 
-                        message.channel.send({content: user.toString(), embeds: [ultimate_bravery], files: [attachment]}).then(m => {
+                        async function getEmbed() {
+                            return new MessageEmbed()
+                                .setColor('#7289D9')
+                                //.setTitle('Ultimate Bravery')
+                                .setAuthor({name: user.username, iconURL: user.avatarURL()})
+                                .setDescription('Voici ton ultimate bravery, GOOD LUCK & HAVE FUN!😼🎲😹')
+                                .addFields([
+                                    {name: 'Ton champion', value: randomChamp.name, inline: true},
+                                    {name: 'Ton rôle', value: post, inline: true},
+                                    {
+                                        name: 'Tes runes',
+                                        value: randomRunes.major.name + " | " + randomRunes.secondary.name,
+                                        inline: true
+                                    },
+                                    {name: 'Ton summoner', value: randomSummonerSpell.name, inline: true},
+                                    {name: 'Tes bottes', value: randomBoots.name, inline: true},
+                                ])
+                                .setFooter({text: 'Powered by Toby The Fucking Cat'});
+                        }
+
+                        const ultimate_bravery = await getEmbed()
+                        const attachment = await generateCanvasAttachment()
+
+                        message.channel.send({
+                            content: user.toString(),
+                            embeds: [ultimate_bravery],
+                            files: [attachment]
+                        }).then(m => {
                             m.react('🎲')
 
                             const filter = (reaction, reactUser) => {
-                                return ['🎲'].includes(reaction.emoji.name) && reactUser.id === user.id && reactUser !== client.user.id;
+                                return ['🎲'].includes(reaction.emoji.name) && reactUser.id === user.id;
                             };
 
-                            const collector = m.createReactionCollector({filter: filter, time: 20 * 1000, max: 1})
+                            // Rolls
+                            const collector = m.createReactionCollector({filter: filter, time: 10 * 60 * 1000})
                             collector.on("collect", async (r, user) => {
-                                m.channel.send('TU JOUES CA ET VA NIQUER TA MERE')
+                                await r.remove()
+                                //m.edit({content: 'Lancement des dés ...', embeds: [], files: []})
+                                randomChamp = getRandomChamp()
+                                randomBoots = getRandomBoots()
+                                randomSummonerSpell = getRandomSummonerSpell()
+                                randomRunes = getRandomRunes()
+                                m.edit({
+                                    content: user.toString(),
+                                    embeds: [await getEmbed()],
+                                    files: [await generateCanvasAttachment()]
+                                }).then(() => {
+                                    m.react('🎲')
+                                    collector.resetTimer()
+                                })
+                            })
+
+                            // Roll time end
+                            collector.on("end", () => {
+                                m.delete()
                             })
                         })
                     })
@@ -160,17 +209,20 @@ client.on('messageCreate', async (message) => {
                 })
                 break;
             default:
+                defaultFallback = true
                 message.reply('che ne connais pas cha! 😾')
                 //message.reply({files: ["img/error.png"]});
                 break;
         }
+
+        if (!defaultFallback) message.delete()
     }
 })
 
 function getDataFromAPI() {
     axios.get('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/data/fr_FR/champion.json')
         .then(res => {
-            champions = res.data.data
+            champions = Object.values(res.data.data)
         })
     axios.get('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/data/fr_FR/runesReforged.json')
         .then(res => {
