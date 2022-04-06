@@ -11,6 +11,7 @@ const client = new Client({
 let champions = null;
 let runes = null;
 let summoners = null;
+let boots = null;
 
 client.login(config.token)
 
@@ -43,8 +44,7 @@ client.on('messageCreate', async (message) => {
             case 'ub':
                 let randomPost = ["Jungle", "Bot", "Support", "Top", "Mid"]
                 let championsAsArray = Object.values(champions)
-                let runesAsArray = Object.values(runes)
-                let summonersAsArray = Object.values(summoners)
+
 
                 let channel = message.channel;
                 message.channel.send("Réagissez à ce message pour participer à ce UB !").then(async message => {
@@ -61,7 +61,7 @@ client.on('messageCreate', async (message) => {
 
 
 
-                        let randomMajorFamilyRune = _.sample(runesAsArray)
+                        let randomMajorFamilyRune = _.sample(runes)
                         let randomMajorFamilyRuneName = randomMajorFamilyRune.name
                         let randomMajorRune = _.sample(randomMajorFamilyRune.runes)
                         let randomMajorRuneName = randomMajorRune.name
@@ -70,15 +70,16 @@ client.on('messageCreate', async (message) => {
                         let randomSecondaryFamilyRuneName
 
                         do {
-                            randomSecondaryFamilyRune = _.sample(runesAsArray)
+                            randomSecondaryFamilyRune = _.sample(runes)
                             randomSecondaryFamilyRuneName = randomSecondaryFamilyRune.name
                         } while (randomMajorFamilyRuneName === randomSecondaryFamilyRuneName)
 
                         let post = _.sample(randomPost)
                         randomPost.splice(randomPost.indexOf(post), 1)
 
-                        let randomSummonerSpell = _.sample(summonersAsArray)
-                        console.log(randomSummonerSpell.id)
+                        let randomSummonerSpell = _.sample(summoners)
+
+                        let randomBoots = _.sample(boots)
 
                         // Création du canvas
                         const canvas = Canvas.createCanvas(960, 540);
@@ -98,15 +99,26 @@ client.on('messageCreate', async (message) => {
 
                         // Major Rune
                         const imgMajorRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomMajorRune.icon);
-                        context.drawImage(imgMajorRune, 25, 150, 100, 100);
+                        context.drawImage(imgMajorRune, 25, 125, 100, 100);
 
                         // Secondary Rune
                         const imgSecondaryRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomSecondaryFamilyRune.icon);
-                        context.drawImage(imgSecondaryRune, 125, 175, 50, 50);
+                        context.drawImage(imgSecondaryRune, 125, 150, 50, 50);
 
                         // Summoner
                         const imgSummoner = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/img/spell/' + randomSummonerSpell.id + '.png');
-                        context.drawImage(imgSummoner, 45, 275, 60, 60);
+                        context.drawImage(imgSummoner, 45, 225, 60, 60);
+
+                        // Bottes
+                        const imgBoots = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/img/item/' + randomBoots.image.full);
+                        context.drawImage(imgBoots, 120, 225, 60, 60);
+
+                        context.fillStyle = 'white'
+                        context.strokeStyle = '#7289D9'
+                        context.font = '90px "Friz Quadrata"'
+
+                        context.fillText(randomChamp.name, canvas.width / 4, 450);
+                        context.strokeText(randomChamp.name, canvas.width / 4, 450);
 
                         // Use the helpful Attachment class structure to process the file for you
                         const attachment = new MessageAttachment(canvas.toBuffer(), 'ub.png');
@@ -117,13 +129,15 @@ client.on('messageCreate', async (message) => {
                             .setAuthor({name: user.username, iconURL: user.avatarURL()})
                             .setDescription('Voici ton ultimate bravery, GOOD LUCK & HAVE FUN!😼🎲😹')
                             .addFields([
-                                {name: 'Ton Champion', value: randomChamp.name, inline: true},
+                                {name: 'Ton champion', value: randomChamp.name, inline: true},
                                 {name: 'Ton rôle', value: post, inline: true},
                                 {
                                     name: 'Tes runes',
                                     value: randomMajorRuneName + " | " + randomSecondaryFamilyRuneName,
                                     inline: true
                                 },
+                                {name: 'Ton summoner', value: randomSummonerSpell.name, inline: true},
+                                {name: 'Tes bottes', value: randomBoots.name, inline: true},
                             ])
                             .setFooter({text: 'Powered by Toby The Fucking Cat'});
 
@@ -144,19 +158,6 @@ client.on('messageCreate', async (message) => {
                         message.delete()
                     })
                 })
-
-                /*message.awaitReactions({ filter, max: 6, time: 30000, errors: ['time'] })
-                    .then(async collected => {
-                        console.log(collected)
-                        const reaction = collected.first;
-
-                        if (reaction.emoji.name === '👍') {
-
-
-                        }
-                    }).catch(collected => {
-                        message.reply('Merci pour che vent...😿');
-                    });*/
                 break;
             default:
                 message.reply('che ne connais pas cha! 😾')
@@ -179,7 +180,7 @@ function getDataFromAPI() {
                 runeType.runes = runeType.slots[0].runes
                 delete runeType.slots
             })
-            runes = data;
+            runes = Object.values(data);
         })
     axios.get('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/data/fr_FR/summoner.json')
         .then(res => {
@@ -190,8 +191,14 @@ function getDataFromAPI() {
             delete res.data.data.Summoner_UltBookPlaceholder
             delete res.data.data.Summoner_UltBookSmitePlaceholder
 
-            summoners = res.data.data
+            summoners = Object.values(res.data.data)
+        })
+    axios.get('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/data/fr_FR/item.json')
+        .then(res => {
+            let data = res.data.data
 
+            boots = Object.values(data).filter(item => item.tags.includes('Boots') && item.depth > 1)
+            //boots.forEach(boot => console.log(boot.name))
         })
 }
 
