@@ -10,6 +10,7 @@ const client = new Client({
 })
 let champions = null;
 let runes = null;
+let summoners = null;
 
 client.login(config.token)
 
@@ -42,6 +43,8 @@ client.on('messageCreate', async (message) => {
             case 'ub':
                 let randomPost = ["Jungle", "Bot", "Support", "Top", "Mid"]
                 let championsAsArray = Object.values(champions)
+                let runesAsArray = Object.values(runes)
+                let summonersAsArray = Object.values(summoners)
 
                 let channel = message.channel;
                 message.channel.send("Réagissez à ce message pour participer à ce UB !").then(async message => {
@@ -56,7 +59,7 @@ client.on('messageCreate', async (message) => {
                         let randomChamp = _.sample(championsAsArray)
                         championsAsArray.splice(championsAsArray.indexOf(randomChamp), 1)
 
-                        let runesAsArray = Object.values(runes)
+
 
                         let randomMajorFamilyRune = _.sample(runesAsArray)
                         let randomMajorFamilyRuneName = randomMajorFamilyRune.name
@@ -74,6 +77,9 @@ client.on('messageCreate', async (message) => {
                         let post = _.sample(randomPost)
                         randomPost.splice(randomPost.indexOf(post), 1)
 
+                        let randomSummonerSpell = _.sample(summonersAsArray)
+                        console.log(randomSummonerSpell.id)
+
                         // Création du canvas
                         const canvas = Canvas.createCanvas(960, 540);
                         const context = canvas.getContext('2d');
@@ -88,15 +94,19 @@ client.on('messageCreate', async (message) => {
 
                         // Post
                         const imgPost = await Canvas.loadImage('img/Position_Diamond-' + post + '.png');
-                        context.drawImage(imgPost, 60, 50, 100, 100);
+                        context.drawImage(imgPost, 60, 25, 100, 100);
 
                         // Major Rune
                         const imgMajorRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomMajorRune.icon);
-                        context.drawImage(imgMajorRune, 25, 175, 100, 100);
+                        context.drawImage(imgMajorRune, 25, 150, 100, 100);
 
                         // Secondary Rune
                         const imgSecondaryRune = await Canvas.loadImage('https://ddragon.canisback.com/img/' + randomSecondaryFamilyRune.icon);
-                        context.drawImage(imgSecondaryRune, 125, 200, 50, 50);
+                        context.drawImage(imgSecondaryRune, 125, 175, 50, 50);
+
+                        // Summoner
+                        const imgSummoner = await Canvas.loadImage('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/img/spell/' + randomSummonerSpell.id + '.png');
+                        context.drawImage(imgSummoner, 45, 275, 60, 60);
 
                         // Use the helpful Attachment class structure to process the file for you
                         const attachment = new MessageAttachment(canvas.toBuffer(), 'ub.png');
@@ -170,6 +180,18 @@ function getDataFromAPI() {
                 delete runeType.slots
             })
             runes = data;
+        })
+    axios.get('http://ddragon.leagueoflegends.com/cdn/' + config.currentPatch + '/data/fr_FR/summoner.json')
+        .then(res => {
+            delete res.data.data.SummonerPoroRecall
+            delete res.data.data.SummonerPoroThrow
+            delete res.data.data.SummonerSnowURFSnowball_Mark
+            delete res.data.data.SummonerSnowball
+            delete res.data.data.Summoner_UltBookPlaceholder
+            delete res.data.data.Summoner_UltBookSmitePlaceholder
+
+            summoners = res.data.data
+
         })
 }
 
